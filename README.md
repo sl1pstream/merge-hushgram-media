@@ -46,5 +46,11 @@ It should look something like this if you've done it right:
 
 **Note:** If your phone is like mine and the gallery takes its sweet time showing the changes to albums, install [mediaScanner](https://play.google.com/store/apps/details?id=awais.media.scanner&hl=en_US) and have it scan all 3 directories (Pictures/Instagram, Movies/Instagram, Download/Hushgram)
 
+**MacroDroid automation demo**
+
+https://github.com/user-attachments/assets/669a11d6-3707-4180-a6c2-eeb320572b2f
+
+
+
 ---
 **Note about AI-generated code:** I have minimal experience with python, enough to be able to read and understand what the script itself does. The problem is, I make too many typos and spend hours rewriting the simplest of scripts because I struggle with planning. I use downloaded LLMs to generate code so I won't lose time because of the shortcoming. I don't like using cloud-based models since they contribute a lot to the overuse of electricity and natural resources.
