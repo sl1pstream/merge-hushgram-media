@@ -39,3 +39,6 @@ You will need to create a wrapper for your script. In Termux:
 It should look something like this if you've done it right:
 
 <img width="182" height="400" alt="Screenshot_2026-11-07-00-05-05-44_2e840d222d67ef3caca3a1c67d71d48f" src="https://github.com/user-attachments/assets/3c8db471-1704-464d-a97f-18ae287821ef" />
+
+---
+**Note about AI-generated code:** I have minimal experience with python, enough to be able to read and understand what the script itself does. The problem is, I make too many typos and spend hours rewriting the simplest of scripts because I struggle with planning. I use downloaded LLMs to generate code so I won't lose time because of the shortcoming. I don't like using cloud-based models since they contribute a lot to the overuse of electricity and natural resources.
