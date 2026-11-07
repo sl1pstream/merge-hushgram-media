@@ -17,9 +17,13 @@ Movies/Instagram
 **Script without `Folder per account`** just moves everything in the 2 directories into Download/HushGram and renames duplicate files
 
 ## How to use this
-I'd recommend using this alongside [MacroDroid](https://play.google.com/store/apps/details?id=com.arlosoft.macrodroid&hl=en) and [Termux](https://github.com/termux/termux-app):
+You can simply download this and execute it with [Termux](https://github.com/termux/termux-app)
 
-**Triggers:** Application Closed - Instagram (It doesn'*have* to be that, but I did find that the most efficient without relying on an time interval based check, since most everyday saves are done by the time you close out of the app anyway)
+If you have `Folder per account` enabled in HushGram, use [merge_hushgram.py](https://github.com/sl1pstream/merge-hushgram-media/blob/main/merge_hushgram.py). If disabled, use [merge_hushgram_nofolderper.py](https://github.com/sl1pstream/merge-hushgram-media/blob/main/merge_hushgram_nofolderper.py)
+
+I'd recommend using this alongside [MacroDroid](https://play.google.com/store/apps/details?id=com.arlosoft.macrodroid&hl=en):
+
+**Triggers:** Application Closed - Instagram (It doesn't *have* to be that, but I did find that the most efficient without relying on an time interval based check, since most everyday saves are done by the time you close out of the app anyway)
 
 You will need to create a wrapper for your script. In Termux:
 1. `mkdir -p /.termux/tasker`
