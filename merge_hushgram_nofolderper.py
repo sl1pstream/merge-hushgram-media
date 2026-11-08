@@ -1,4 +1,3 @@
-
 import os
 import time
 from pathlib import Path
@@ -9,105 +8,112 @@ SOURCES = [
 ]
 
 DESTINATION = Path("/storage/emulated/0/Download/HushGram")
-STABILITY_WAIT = 2
+STABLE_AGE = 5  # seconds since last write before a file counts as finished
 LOG = Path.home() / "hushgram_move.log"
 
 
-def log(message):
+def log(fh, message):
     line = f"{time.strftime('%Y-%m-%d %H:%M:%S')} {message}"
     print(line)
-    with LOG.open("a") as f:
-        f.write(line + "\n")
+    fh.write(line + "\n")
+    fh.flush()
 
 
-def unique_target(target):
-    """Generate an unused filename without overwriting existing files."""
-    if not target.exists():
-        return target
+def unique_name(name, taken):
+    """Return a name not already used in the destination, and reserve it."""
+    if name not in taken:
+        taken.add(name)
+        return name
 
+    stem, suffix = os.path.splitext(name)
     counter = 1
 
     while True:
-        candidate = target.with_name(
-            f"{target.stem} ({counter}){target.suffix}"
-        )
+        candidate = f"{stem} ({counter}){suffix}"
 
-        if not candidate.exists():
+        if candidate not in taken:
+            taken.add(candidate)
             return candidate
 
         counter += 1
 
 
-def move_contents(source, destination):
+def move_contents(source, destination, fh):
     destination.mkdir(parents=True, exist_ok=True)
 
     try:
-        entries = list(source.iterdir())
+        taken = set(os.listdir(destination))
     except OSError as e:
-        log(f"Cannot read {source}: {e}")
+        log(fh, f"Cannot list {destination}: {e}")
         return
 
-    for item in entries:
-        target = destination / item.name
+    try:
+        entries = list(os.scandir(source))
+    except OSError as e:
+        log(fh, f"Cannot read {source}: {e}")
+        return
 
-        if item.is_dir() and not item.is_symlink():
-            if target.exists() and not target.is_dir():
-                log(f"CONFLICT (folder vs file): {item}")
-                continue
+    for entry in entries:
+        target = destination / entry.name
 
-            target.mkdir(exist_ok=True)
-            move_contents(item, target)
+        try:
+            if entry.is_dir(follow_symlinks=False):
+                if entry.name in taken and not target.is_dir():
+                    log(fh, f"CONFLICT (folder vs file): {entry.path}")
+                    continue
 
-            try:
-                item.rmdir()
-                log(f"Removed empty folder: {item}")
-            except OSError:
-                pass
+                target.mkdir(exist_ok=True)
+                taken.add(entry.name)
+                move_contents(Path(entry.path), target, fh)
 
-        elif item.is_file():
-            try:
-                before = item.stat()
-                time.sleep(STABILITY_WAIT)
-                after = item.stat()
+                try:
+                    os.rmdir(entry.path)
+                    log(fh, f"Removed empty folder: {entry.path}")
+                except OSError:
+                    pass
 
-                if (before.st_size, before.st_mtime_ns) != (
-                    after.st_size,
-                    after.st_mtime_ns,
-                ):
-                    log(f"Still changing; left in source: {item}")
+            elif entry.is_file():
+                st = entry.stat()
+
+                # No sleep: only skip files still being written right now.
+                if time.time() - st.st_mtime < STABLE_AGE:
+                    log(fh, f"Still changing; left in source: {entry.path}")
                     continue
 
                 # Rename incoming duplicates instead of skipping them.
-                final_target = unique_target(target)
+                final_name = unique_name(entry.name, taken)
+                final_target = destination / final_name
 
-                os.rename(item, final_target)
+                os.rename(entry.path, final_target)
 
-                if final_target != target:
+                if final_name != entry.name:
                     log(
-                        f"RENAMED DUPLICATE: {item.name} "
-                        f"-> {final_target.name}"
+                        fh,
+                        f"RENAMED DUPLICATE: {entry.name} "
+                        f"-> {final_name}",
                     )
                 else:
-                    log(f"MOVED: {item} -> {final_target}")
+                    log(fh, f"MOVED: {entry.path} -> {final_target}")
 
-            except FileNotFoundError:
-                pass
-            except OSError as e:
-                log(f"ERROR moving {item}: {e}")
+        except FileNotFoundError:
+            pass
+        except OSError as e:
+            log(fh, f"ERROR moving {entry.path}: {e}")
 
 
 def main():
     DESTINATION.mkdir(parents=True, exist_ok=True)
 
-    for source in SOURCES:
-        if not source.is_dir():
-            log(f"Source not found: {source}")
-            continue
+    with LOG.open("a") as fh:
+        for source in SOURCES:
+            if not source.is_dir():
+                log(fh, f"Source not found: {source}")
+                continue
 
-        log(f"Scanning: {source}")
-        move_contents(source, DESTINATION)
+            log(fh, f"Scanning: {source}")
+            move_contents(source, DESTINATION, fh)
 
-    log("Scan complete.")
+        log(fh, "Scan complete.")
 
 
 if __name__ == "__main__":
