@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 import time
 from pathlib import Path
@@ -8,7 +10,7 @@ SOURCES = [
 ]
 
 DESTINATION = Path("/storage/emulated/0/Download/HushGram")
-STABLE_AGE = 5  # seconds since last write before a file counts as finished
+STABLE_AGE = 2  # seconds since last write before a file counts as finished
 LOG = Path.home() / "hushgram_move.log"
 
 
@@ -38,7 +40,7 @@ def unique_name(name, taken):
         counter += 1
 
 
-def move_contents(source, destination, fh, is_source_root=False):
+def move_contents(source, destination, fh, stats, is_source_root=False):
     destination.mkdir(parents=True, exist_ok=True)
 
     try:
@@ -69,7 +71,7 @@ def move_contents(source, destination, fh, is_source_root=False):
 
                 target.mkdir(exist_ok=True)
                 taken.add(entry.name)
-                move_contents(Path(entry.path), target, fh)
+                move_contents(Path(entry.path), target, fh, stats)
 
                 try:
                     os.rmdir(entry.path)
@@ -82,6 +84,7 @@ def move_contents(source, destination, fh, is_source_root=False):
 
                 # No sleep: only skip files still being written right now.
                 if time.time() - st.st_mtime < STABLE_AGE:
+                    stats["skipped"] += 1
                     log(fh, f"Still changing; left in source: {entry.path}")
                     continue
 
@@ -90,6 +93,7 @@ def move_contents(source, destination, fh, is_source_root=False):
                 final_target = destination / final_name
 
                 os.rename(entry.path, final_target)
+                stats["moved"] += 1
 
                 if final_name != entry.name:
                     log(
@@ -103,11 +107,14 @@ def move_contents(source, destination, fh, is_source_root=False):
         except FileNotFoundError:
             pass
         except OSError as e:
+            stats["errors"] += 1
             log(fh, f"ERROR moving {entry.path}: {e}")
 
 
 def main():
     DESTINATION.mkdir(parents=True, exist_ok=True)
+    stats = {"moved": 0, "skipped": 0, "errors": 0}
+    started = time.time()
 
     with LOG.open("a") as fh:
         for source in SOURCES:
@@ -116,9 +123,17 @@ def main():
                 continue
 
             log(fh, f"Scanning: {source}")
-            move_contents(source, DESTINATION, fh, is_source_root=True)
+            move_contents(source, DESTINATION, fh, stats, is_source_root=True)
 
-        log(fh, "Scan complete.")
+        elapsed = time.time() - started
+        count = stats["moved"]
+        noun = "file" if count == 1 else "files"
+        log(
+            fh,
+            f"Scan complete. Moved {count} {noun} in "
+            f"{elapsed:.2f}s (skipped {stats['skipped']}, "
+            f"errors {stats['errors']})",
+        )
 
 
 if __name__ == "__main__":
