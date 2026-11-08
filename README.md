@@ -1,5 +1,7 @@
 # merge-hushgram-media
 
+[Click here for the latest changes to both scripts](https://github.com/sl1pstream/merge-hushgram-media/blob/main/Changelog.md)
+
 This is a script that works alongside [Morphe Manager](https://github.com/MorpheApp/morphe-manager) and [HushGram](https://github.com/SysAdminDoc/HushGram) patches for Instagram on Android. If that sentence means nothing to you, just pretend like you didn't see this
 
 ### Why this exists
